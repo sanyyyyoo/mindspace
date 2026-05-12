@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getMindspaceApiBaseUrl } from "../../lib/mindspaceApi.js";
 
 function TopicDashboard() {
   const [topics, setTopics] = useState([]);
@@ -12,7 +13,13 @@ function TopicDashboard() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:3000/topics");
+      const base = getMindspaceApiBaseUrl();
+      if (!base) {
+        throw new Error(
+          "API URL is not configured (set VITE_API_URL to your Render backend URL)."
+        );
+      }
+      const response = await fetch(`${base}/topics`);
       const rawText = await response.text();
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {

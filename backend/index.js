@@ -19,17 +19,50 @@ import {
 } from "./journalParse.js";
 
 const app = express();
-const PORT = 3000;
+
+/**
+ * CORS: browser sends `Origin` as scheme + host only (no path). Never put `/login` here.
+ * Set on Render: ALLOWED_ORIGINS=https://mindspace-eight-ruddy.vercel.app
+ * Local dev: ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+ * Comma-separated; trailing slashes stripped.
+ */
+function parseAllowedOrigins() {
+  const raw = process.env.ALLOWED_ORIGINS || "";
+  const fromEnv = raw
+    .split(",")
+    .map((s) => s.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  if (fromEnv.length) return fromEnv;
+  return ["http://localhost:5173", "http://127.0.0.1:5173"];
+}
+
+const allowedOrigins = parseAllowedOrigins();
+
+if (process.env.RENDER && !process.env.ALLOWED_ORIGINS?.trim()) {
+  console.warn(
+    "⚠️ ALLOWED_ORIGINS is not set on Render. Set it to your Vercel origin (e.g. https://mindspace-eight-ruddy.vercel.app) or browsers will get CORS errors."
+  );
+}
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    methods: ["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+/** Render and other hosts inject PORT; default 3000 for local. */
+const PORT = Number(process.env.PORT) || 3000;
 
 // ======================================================
 // MIDDLEWARE
 // ======================================================
-
-app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -724,6 +757,6 @@ app.get("/rewards", requireAuthUser, async (req, res) => {
 // ======================================================
 
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server listening on port ${PORT} (allowed CORS origins: ${allowedOrigins.join(", ") || "none"})`);
 });
