@@ -1,0 +1,387 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap");
+
+[data-theme="dark"] {
+  --bg-primary: #0a0d1a;
+  --bg-secondary: #0f1428;
+  --bg-card: #141930;
+  --bg-card-alt: #1a2040;
+  --accent-primary: #7c6ff7;
+  --accent-secondary: #5a52d0;
+  --accent-glow: #9d8fff;
+  --accent-warm: #f5c842;
+  --accent-teal: #4ecdc4;
+  --text-primary: #e8eaf6;
+  --text-secondary: #8890b8;
+  --text-muted: #4a5080;
+  --text-accent: #c4bcff;
+  --border: #1e2545;
+  --border-subtle: #151b38;
+  --streak-active: #7c6ff7;
+  --streak-inactive: #1e2545;
+  --streak-today: #a89fff;
+  --chart-bar: #7c6ff7;
+  --chart-bar-dim: #2a2f5a;
+  --chart-line: #4ecdc4;
+  --chart-line-secondary: #f5c842;
+  --chart-grid: #1a2040;
+  --positive: #4ecdc4;
+  --negative: #ff6b8a;
+  --neutral: #f5c842;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --glow: 0 0 20px rgba(124, 111, 247, 0.25);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --bg-texture: radial-gradient(ellipse at 20% 20%, #1a1f4e 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, #0f0d2e 0%, transparent 50%), #060814;
+  --header-wash: var(--bg-primary);
+  --card-border: 1px solid rgba(130, 168, 255, 0.38);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #ede8dc;
+  --bg-card: #faf7f0;
+  --bg-card-alt: #eef6f5;
+  --accent-primary: #2aaea3;
+  --accent-secondary: #1d8a80;
+  --accent-glow: #5ecec7;
+  --accent-warm: #f5a623;
+  --accent-sand: #d4a96a;
+  --accent-teal: #2aaea3;
+  --text-primary: #1a2e2d;
+  --text-secondary: #5a7370;
+  --text-muted: #9aafac;
+  --text-accent: #2aaea3;
+  --border: #ddd8cc;
+  --border-subtle: #e8e3d8;
+  --streak-active: #2aaea3;
+  --streak-inactive: #e0ddd4;
+  --streak-today: #1d8a80;
+  --chart-bar: #2aaea3;
+  --chart-bar-dim: #d0ecea;
+  --chart-line: #2aaea3;
+  --chart-line-secondary: #f5a623;
+  --chart-grid: #ede8dc;
+  --positive: #2aaea3;
+  --negative: #e05c6a;
+  --neutral: #f5a623;
+  --shadow: 0 2px 16px rgba(30, 80, 75, 0.1);
+  --glow: 0 0 16px rgba(42, 174, 163, 0.2);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --bg-texture: linear-gradient(
+    180deg,
+    #c5e8f0 0%,
+    #dff4f0 18%,
+    #f0ebe3 45%,
+    #f5f0e8 100%
+  );
+  --header-wash: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  --card-border: 1px solid rgba(72, 118, 188, 0.34);
+}
+
+@keyframes selfcast-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes selfcast-twinkle-slow {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+@keyframes selfcast-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-80px, 40px);
+  }
+}
+
+@keyframes selfcast-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes selfcast-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes selfcast-tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.selfcast-root {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-texture);
+  min-height: 100vh;
+  transition: background 0.4s ease, color 0.3s ease;
+}
+
+[data-theme="dark"] .selfcast-root {
+  background:
+    radial-gradient(1px 1px at 6% 11%, rgba(255, 255, 255, 0.5), transparent) 0 0 / 110px 130px,
+    radial-gradient(1px 1px at 41% 6%, rgba(230, 235, 255, 0.38), transparent) 35px 55px / 140px 120px,
+    radial-gradient(1px 1px at 73% 38%, rgba(255, 255, 255, 0.34), transparent) 12px 80px / 160px 150px,
+    radial-gradient(1px 1px at 19% 63%, rgba(255, 255, 255, 0.3), transparent) 70px 20px / 95px 110px,
+    radial-gradient(1px 1px at 88% 71%, rgba(200, 210, 255, 0.42), transparent) 50px 40px / 175px 165px,
+    radial-gradient(1px 1px at 54% 89%, rgba(255, 255, 255, 0.28), transparent) 95px 5px / 125px 140px,
+    var(--bg-texture);
+}
+
+/* Starry night: dense star layers + slow drift */
+[data-theme="dark"] .selfcast-ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+[data-theme="dark"] .selfcast-ambient::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background-image: radial-gradient(1px 1px at 10% 10%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 42% 18%, rgba(230, 220, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 55% 62%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 68% 28%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 78% 75%, rgba(200, 210, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 88% 42%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 15% 72%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 33% 88%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 91% 8%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 7% 44%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 49% 9%, rgba(255, 250, 220, 0.45), transparent),
+    radial-gradient(1px 1px at 62% 48%, rgba(255, 255, 255, 0.38), transparent),
+    radial-gradient(1px 1px at 22% 94%, rgba(220, 225, 255, 0.42), transparent),
+    radial-gradient(1px 1px at 97% 58%, rgba(255, 255, 255, 0.33), transparent);
+  background-size: 220px 220px;
+  background-position: 0 0, 40px 80px, 120px 30px, 180px 160px, 60px 200px, 200px 40px,
+    100px 120px, 30px 50px, 150px 90px, 70px 10px, 110px 55px, 20px 140px, 165px 25px,
+    85px 175px, 195px 95px;
+  animation: selfcast-twinkle 5s ease-in-out infinite, selfcast-drift 120s linear infinite;
+}
+
+[data-theme="dark"] .selfcast-ambient::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background-image: radial-gradient(1.5px 1.5px at 20% 25%, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 48% 55%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 72% 18%, rgba(180, 190, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 12% 48%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 85% 65%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 38% 78%, rgba(255, 250, 220, 0.45), transparent),
+    radial-gradient(1px 1px at 95% 38%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 5% 85%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 58% 12%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.2px 1.2px at 31% 66%, rgba(255, 255, 255, 0.48), transparent),
+    radial-gradient(1px 1px at 77% 82%, rgba(200, 205, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 14% 22%, rgba(255, 255, 255, 0.36), transparent);
+  background-size: 280px 280px;
+  background-position: 50px 20px, 130px 140px, 210px 60px, 20px 180px, 160px 200px, 90px 40px,
+    240px 100px, 60px 220px, 175px 45px, 40px 95px, 220px 130px, 105px 15px;
+  animation: selfcast-twinkle-slow 8s ease-in-out infinite reverse,
+    selfcast-drift 180s linear infinite reverse;
+  opacity: 1;
+}
+
+/* Beach vibes: sky, sun, water band, sand */
+[data-theme="light"] .selfcast-ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+      circle 140px at 82% 8%,
+      rgba(255, 236, 180, 0.75) 0%,
+      rgba(255, 220, 150, 0.25) 45%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse 120% 55% at 50% -5%, rgba(135, 206, 235, 0.55) 0%, transparent 58%),
+    linear-gradient(
+      180deg,
+      rgba(120, 190, 220, 0.35) 0%,
+      rgba(180, 225, 230, 0.25) 12%,
+      rgba(200, 235, 228, 0.35) 22%,
+      rgba(210, 230, 220, 0.5) 32%,
+      rgba(228, 215, 195, 0.65) 48%,
+      rgba(240, 228, 210, 0.85) 62%,
+      rgba(245, 235, 218, 0.95) 78%,
+      #f2ead8 100%
+    );
+}
+
+[data-theme="light"] .selfcast-ambient::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38%;
+  background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 18px,
+      rgba(42, 174, 163, 0.06) 18px,
+      rgba(42, 174, 163, 0.06) 20px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(42, 174, 163, 0.12) 35%,
+      rgba(212, 169, 106, 0.15) 100%
+    );
+  opacity: 0.9;
+  mask-image: linear-gradient(180deg, transparent 0%, black 35%);
+}
+
+[data-theme="light"] .selfcast-ambient::after {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 22%;
+  height: 18%;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 0%,
+    rgba(42, 174, 163, 0.22) 0%,
+    rgba(42, 174, 163, 0.08) 45%,
+    transparent 70%
+  );
+  border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+}
+
+.selfcast-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 3rem;
+}
+
+.selfcast-header {
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  transition: background 0.4s ease;
+}
+
+[data-theme="dark"] .selfcast-header {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow);
+}
+
+[data-theme="light"] .selfcast-header {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-primary) 18%, var(--bg-card)) 0%,
+    var(--bg-card) 100%
+  );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.selfcast-header-wave {
+  height: 6px;
+  margin: 0 -1.25rem -1rem;
+  margin-top: 0.75rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent-primary) 35%, transparent),
+    transparent
+  );
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .selfcast-header-wave {
+  display: none;
+}
+
+.selfcast-time-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  animation: selfcast-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 50%, transparent);
+}
+
+.selfcast-stat-card {
+  animation: selfcast-fade-up 0.5s ease forwards;
+  opacity: 0;
+}
+
+.selfcast-stat-card:nth-child(1) {
+  animation-delay: 0s;
+}
+.selfcast-stat-card:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.selfcast-stat-card:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.selfcast-stat-card:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.selfcast-streak-tile {
+  animation: selfcast-tile-in 0.35s ease forwards;
+  opacity: 0;
+}
+
+/* Subtle constellation over the starfield (dark theme only; SVG injected in AppShell) */
+[data-theme="dark"] .selfcast-constellation {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.82;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 28px rgba(140, 160, 255, 0.15));
+}

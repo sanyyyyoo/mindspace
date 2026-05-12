@@ -1,0 +1,15 @@
+@import "./styles/globals.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure theme tokens win over Tailwind preflight */
+@layer base {
+  html,
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-texture);
+    color: var(--text-primary);
+  }
+}

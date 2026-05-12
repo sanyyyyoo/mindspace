@@ -1,0 +1,67 @@
+@import "./theme.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-body);
+  background: var(--bg-texture);
+  color: var(--text-primary);
+  transition: background 0.4s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.selfcast-pill {
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.selfcast-pill--active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: transparent;
+}
+
+.selfcast-card {
+  background: var(--bg-card);
+  border: var(--card-border, 1px solid var(--border-subtle));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: background 0.4s ease, border-color 0.3s ease;
+}
+
+.selfcast-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  border: none;
+  margin: 0;
+}
