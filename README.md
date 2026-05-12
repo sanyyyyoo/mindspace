@@ -3,6 +3,7 @@
 AI-powered productivity journaling and analytics platform built with React, Node.js, Supabase, and Groq AI.
 
 ---
+project url=mindspace-eight-ruddy.vercel.app
 
 # 🚀 Overview
 
@@ -86,6 +87,7 @@ The platform includes:
 * Recharts
 
 ## Backend
+backend url=https://mindspace-j7br.onrender.com
 
 * Node.js
 * Express.js
