@@ -1,14 +1,14 @@
 /**
  * Authenticated calls to the Mindspace Express API.
  *
- * Set VITE_API_URL in Vercel to your Render URL, e.g.
- *   https://mindspace-j7br.onrender.com
- * (no trailing slash). In local dev, falls back to http://localhost:3000.
+ * Vite: set VITE_API_URL to the Render API origin (no path, no trailing slash).
+ * In production, if unset, uses `MINDSPACE_RENDER_API_ORIGIN` from config/deployedUrls.js.
  *
  * Sends Supabase access_token as Bearer so the backend can call
  * auth.getUser(jwt) and scope queries with req.authUserId.
  */
 import axios from "axios";
+import { MINDSPACE_RENDER_API_ORIGIN } from "../config/deployedUrls.js";
 import { supabase } from "./supabase.js";
 
 function normalizeBase(url) {
@@ -17,18 +17,23 @@ function normalizeBase(url) {
 }
 
 /**
- * Resolved API origin (no path). Empty in production if VITE_API_URL missing — fix in Vercel env.
+ * Resolved API origin (no path).
  */
 export function getMindspaceApiBaseUrl() {
   const fromEnv = normalizeBase(import.meta.env.VITE_API_URL);
   if (fromEnv) return fromEnv;
-  if (import.meta.env.DEV) return "http://localhost:3000";
+  if (import.meta.env.PROD) return normalizeBase(MINDSPACE_RENDER_API_ORIGIN);
+  if (import.meta.env.DEV) {
+    console.warn(
+      "[Mindspace] VITE_API_URL is not set. Add it to my-app/.env (see .env.example), e.g. your Render API origin."
+    );
+  }
   return "";
 }
 
-if (import.meta.env.PROD && !getMindspaceApiBaseUrl()) {
-  console.error(
-    "[Mindspace] VITE_API_URL is not set. Add it in Vercel → Settings → Environment Variables, then redeploy."
+if (import.meta.env.PROD && !normalizeBase(import.meta.env.VITE_API_URL)) {
+  console.warn(
+    "[Mindspace] VITE_API_URL not set at build time; using bundled production API origin. Set VITE_API_URL on Vercel for explicit configuration."
   );
 }
 

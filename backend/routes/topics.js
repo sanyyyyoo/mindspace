@@ -3,11 +3,20 @@ import axios from "axios";
 
 const router = express.Router();
 
-const TOPIC_SERVICE_URL =
-  process.env.TOPIC_SERVICE_URL || "http://localhost:5000/analyze-topics";
+const TOPIC_SERVICE_URL = (process.env.TOPIC_SERVICE_URL || "").trim();
 
 router.get("/", async (_req, res) => {
   try {
+    if (!TOPIC_SERVICE_URL) {
+      return res.json({
+        topics: [],
+        trends: { thisWeek: 0, thisMonth: 0 },
+        totalJournals: 0,
+        message:
+          "Topic analytics service URL is not configured (set TOPIC_SERVICE_URL on the server).",
+      });
+    }
+
     const { data } = await axios.post(
       TOPIC_SERVICE_URL,
       {},
@@ -29,7 +38,7 @@ router.get("/", async (_req, res) => {
         trends: { thisWeek: 0, thisMonth: 0 },
         totalJournals: 0,
         message:
-          "Topic analytics service is offline. Start ai-service/app.py on port 5000."
+          "Topic analytics service is unreachable. Configure TOPIC_SERVICE_URL or start the topic worker.",
       });
     }
 

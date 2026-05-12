@@ -23,6 +23,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { getAuthEmailRedirectUrl } from "../config/siteUrl.js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase.js";
 
 const AuthContext = createContext(null);
@@ -97,6 +98,7 @@ export function AuthProvider({ children }) {
         email: email.trim().toLowerCase(),
         password,
         options: {
+          emailRedirectTo: getAuthEmailRedirectUrl(),
           data: {
             username: metadata.username?.trim() || undefined,
             full_name: metadata.full_name?.trim() || undefined,

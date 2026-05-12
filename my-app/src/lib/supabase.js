@@ -16,7 +16,14 @@
  * Session:
  *   persistSession + localStorage keeps users signed in across refreshes.
  *   autoRefreshToken renews JWTs before expiry. detectSessionInUrl handles
- *   magic-link / OAuth redirects if you add those flows later.
+ *   email confirmation / PKCE redirects when users land with tokens in the URL.
+ *
+ * Email confirmation:
+ *   signUp uses `emailRedirectTo` (see AuthContext + config/siteUrl.js). In the
+ *   Supabase Dashboard → Authentication → URL configuration, add to **Redirect URLs**:
+ *     https://mindspace-eight-ruddy.vercel.app/login
+ *     https://mindspace-eight-ruddy.vercel.app/**
+ *   Set **Site URL** to: https://mindspace-eight-ruddy.vercel.app
  *
  * @see https://supabase.com/docs/reference/javascript/initializing
  * =============================================================================
@@ -37,6 +44,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    flowType: "pkce",
     detectSessionInUrl: true,
     storage: typeof window !== "undefined" ? window.localStorage : undefined,
   },

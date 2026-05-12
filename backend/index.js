@@ -17,14 +17,16 @@ import {
   normalizeCategories,
   resolveSleepHoursHint,
 } from "./journalParse.js";
+import { MINDSPACE_VERCEL_APP_ORIGIN } from "./config/deployedUrls.js";
 
 const app = express();
 
 /**
  * CORS: browser sends `Origin` as scheme + host only (no path). Never put `/login` here.
- * Set on Render: ALLOWED_ORIGINS=https://mindspace-eight-ruddy.vercel.app
- * Local dev: ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
- * Comma-separated; trailing slashes stripped.
+ *
+ * Render: set ALLOWED_ORIGINS=https://mindspace-eight-ruddy.vercel.app (comma-separated for extras).
+ * If unset on Render, defaults to MINDSPACE_VERCEL_APP_ORIGIN only (single production app).
+ * Local Node: set ALLOWED_ORIGINS in backend/.env (see .env.example); no localhost baked in here.
  */
 function parseAllowedOrigins() {
   const raw = process.env.ALLOWED_ORIGINS || "";
@@ -33,29 +35,33 @@ function parseAllowedOrigins() {
     .map((s) => s.trim().replace(/\/$/, ""))
     .filter(Boolean);
   if (fromEnv.length) return fromEnv;
-  return ["http://localhost:5173", "http://127.0.0.1:5173"];
+  if (process.env.RENDER) return [MINDSPACE_VERCEL_APP_ORIGIN];
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[Mindspace] ALLOWED_ORIGINS is not set. Browser CORS from a dev frontend will fail until you set it (see backend/.env.example)."
+    );
+  }
+  return [];
 }
 
 const allowedOrigins = parseAllowedOrigins();
 
-if (process.env.RENDER && !process.env.ALLOWED_ORIGINS?.trim()) {
-  console.warn(
-    "⚠️ ALLOWED_ORIGINS is not set on Render. Set it to your Vercel origin (e.g. https://mindspace-eight-ruddy.vercel.app) or browsers will get CORS errors."
-  );
+function corsOriginCallback(origin, callback) {
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) return callback(null, true);
+  return callback(null, false);
 }
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(null, false);
-    },
-    methods: ["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: corsOriginCallback,
+  methods: ["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  optionsSuccessStatus: 204,
+  maxAge: 86_400,
+};
+
+app.use(cors(corsOptions));
 
 /** Render and other hosts inject PORT; default 3000 for local. */
 const PORT = Number(process.env.PORT) || 3000;
@@ -758,5 +764,7 @@ app.get("/rewards", requireAuthUser, async (req, res) => {
 
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server listening on port ${PORT} (allowed CORS origins: ${allowedOrigins.join(", ") || "none"})`);
+  console.log(
+    `🚀 Server listening on port ${PORT} (CORS allowed: ${allowedOrigins.join(", ")})`
+  );
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMindspaceApiBaseUrl } from "../../lib/mindspaceApi.js";
+import { mindspaceGet } from "../../lib/mindspaceApi.js";
 
 function TopicDashboard() {
   const [topics, setTopics] = useState([]);
@@ -13,32 +13,21 @@ function TopicDashboard() {
     setError("");
 
     try {
-      const base = getMindspaceApiBaseUrl();
-      if (!base) {
-        throw new Error(
-          "API URL is not configured (set VITE_API_URL to your Render backend URL)."
-        );
-      }
-      const response = await fetch(`${base}/topics`);
-      const rawText = await response.text();
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error(
-          `Expected JSON from /topics but got ${contentType || "unknown content type"}. Start/restart backend and python topic service.`
-        );
-      }
+      const { data } = await mindspaceGet("/topics");
 
-      const data = JSON.parse(rawText);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to load topic analytics");
-      }
-
-      setTopics(data.topics || []);
-      setTrends(data.trends || { thisWeek: 0, thisMonth: 0 });
-      setMessage(data.message || "");
+      setTopics(Array.isArray(data?.topics) ? data.topics : []);
+      setTrends(
+        data?.trends && typeof data.trends === "object"
+          ? data.trends
+          : { thisWeek: 0, thisMonth: 0 }
+      );
+      setMessage(typeof data?.message === "string" ? data.message : "");
     } catch (err) {
-      setError(err.message);
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to load topic analytics";
+      setError(String(msg));
     } finally {
       setLoading(false);
     }
