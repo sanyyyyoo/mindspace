@@ -4,6 +4,7 @@ import cors from "cors";
 import Groq from "groq-sdk";
 import { supabase, supabaseConfigError } from "./services/supabase.js";
 import topicsRouter from "./routes/topics.js";
+import { requireAuthUser } from "./middleware/requireAuthUser.js";
 import {
   localDateKey,
   localDateKeyFromCreatedAt,
@@ -27,7 +28,7 @@ const PORT = 3000;
 app.use(cors({
   origin: "http://localhost:5173",
   methods: ["GET", "POST", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 app.use(express.json());
@@ -64,17 +65,25 @@ app.get("/", (req, res) => {
 app.use("/topics", topicsRouter);
 
 // ======================================================
-// ANALYZE JOURNAL ROUTE
+// ANALYZE JOURNAL ROUTE (scoped to authenticated user)
 // ======================================================
 
-app.post("/analyze", async (req, res) => {
+app.post("/analyze", requireAuthUser, async (req, res) => {
 
   console.log("➡️ Analyze route hit");
-  console.log("📦 Incoming data:", req.body);
+  console.log("📦 Incoming data:", { ...req.body, journal: req.body?.journal ? "[text]" : undefined });
 
   try {
 
-    const { journal } = req.body;
+    const { journal, user_id: bodyUserId } = req.body;
+    const userId = req.authUserId;
+
+    if (bodyUserId != null && bodyUserId !== userId) {
+      return res.status(403).json({
+        error: "user_id must match the signed-in account",
+        code: "USER_ID_MISMATCH",
+      });
+    }
 
     if (!journal) {
       return res.status(400).json({
@@ -150,6 +159,8 @@ Return ONLY raw JSON.
     if (!Number.isFinite(scoreNum)) scoreNum = 0;
     parsed.productivityScore = Math.round(Math.max(0, Math.min(10, scoreNum)));
 
+    const categories = normalizeCategories(parsed.categories);
+
     console.log("✅ AI Parsed Result:", parsed);
 
     // Save to Supabase
@@ -167,10 +178,11 @@ Return ONLY raw JSON.
         .from("journal_analysis")
         .insert([
           {
+            user_id: userId,
             journal,
             productivity_score: parsed.productivityScore,
             summary: parsed.summary,
-            categories: parsed.categories,
+            categories,
             feedback: parsed.feedback,
             created_at: savedAtIso,
           }
@@ -184,7 +196,10 @@ Return ONLY raw JSON.
       }
     }
 
-    res.json(parsed);
+    res.json({
+      ...parsed,
+      categories,
+    });
 
   } catch (error) {
 
@@ -200,25 +215,29 @@ Return ONLY raw JSON.
 });
 
 // ======================================================
-// DASHBOARD ANALYTICS ROUTE
+// DASHBOARD ANALYTICS ROUTE (per user)
 // ======================================================
 // ======================================================
 // DASHBOARD ANALYTICS ROUTE (FIXED + ADVANCED)
 // ======================================================
 
-app.get("/dashboard-stats", async (req, res) => {
+app.get("/dashboard-stats", requireAuthUser, async (req, res) => {
   try {
     if (!supabase) {
       return res.status(500).json({ error: "Supabase not configured" });
     }
 
-    const { data, error } = await supabase
+    const userId = req.authUserId;
+
+    const { data: rawRows, error } = await supabase
       .from("journal_analysis")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
 
+    const data = Array.isArray(rawRows) ? rawRows : [];
     const totalJournals = data.length;
 
     // ======================================================
@@ -443,7 +462,7 @@ const productivityTrend = Object.entries(dailyMap).map(
 // WEEKLY REFLECTION ROUTE
 // ======================================================
 
-app.get("/weekly-reflection", async (req, res) => {
+app.get("/weekly-reflection", requireAuthUser, async (req, res) => {
 
   try {
 
@@ -452,14 +471,27 @@ app.get("/weekly-reflection", async (req, res) => {
       return res.status(500).json({ error: "Supabase not configured" });
     }
 
-    const { data, error } = await supabase
+    const userId = req.authUserId;
+
+    const { data: rawRows, error } = await supabase
       .from("journal_analysis")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(10);
 
     if (error) {
       throw error;
+    }
+
+    const data = Array.isArray(rawRows) ? rawRows : [];
+
+    if (data.length === 0) {
+      return res.json({
+        reflection: "No journals yet this week—write an entry to see insights here.",
+        strength: "",
+        improvement: "",
+      });
     }
 
     const journalText = data
@@ -507,13 +539,22 @@ Return ONLY valid JSON:
     const jsonEnd = text.lastIndexOf("}") + 1;
     const parsed = JSON.parse(text.slice(jsonStart, jsonEnd));
 
-    res.json(parsed);
+    res.json({
+      reflection: parsed.reflection ?? "",
+      strength: parsed.strength ?? "",
+      improvement: parsed.improvement ?? "",
+    });
 
   } catch (error) {
 
     console.error("Weekly reflection error:", error.message);
 
-    res.status(500).json({ error: "Failed to generate reflection" });
+    res.status(500).json({
+      reflection: "",
+      strength: "",
+      improvement: "",
+      error: "Failed to generate reflection",
+    });
   }
 });
 
@@ -521,7 +562,7 @@ Return ONLY valid JSON:
 // GET ALL JOURNALS
 // ======================================================
 
-app.get("/journals", async (req, res) => {
+app.get("/journals", requireAuthUser, async (req, res) => {
 
   try {
 
@@ -529,22 +570,25 @@ app.get("/journals", async (req, res) => {
       return res.status(500).json({ error: "Supabase not configured" });
     }
 
-    const { data, error } = await supabase
+    const userId = req.authUserId;
+
+    const { data: rawRows, error } = await supabase
       .from("journal_analysis")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
       throw error;
     }
 
-    res.json(data);
+    res.json(Array.isArray(rawRows) ? rawRows : []);
 
   } catch (error) {
 
     console.error("❌ Fetch journals error:", error.message);
 
-    res.status(500).json({ error: "Failed to fetch journals" });
+    res.json([]);
   }
 });
 
@@ -552,7 +596,7 @@ app.get("/journals", async (req, res) => {
 // DELETE JOURNAL
 // ======================================================
 
-app.delete("/journal/:id", async (req, res) => {
+app.delete("/journal/:id", requireAuthUser, async (req, res) => {
 
   try {
 
@@ -561,14 +605,21 @@ app.delete("/journal/:id", async (req, res) => {
     }
 
     const { id } = req.params;
+    const userId = req.authUserId;
 
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from("journal_analysis")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select("id");
 
     if (error) {
       throw error;
+    }
+
+    if (!Array.isArray(deleted) || deleted.length === 0) {
+      return res.status(404).json({ error: "Journal not found" });
     }
 
     res.json({ message: "Journal deleted successfully" });
@@ -600,19 +651,30 @@ app.use((err, _req, res, _next) => {
 // ======================================================
 // REWARDS ROUTE
 
-app.get("/rewards", async (req, res) => {
+app.get("/rewards", requireAuthUser, async (req, res) => {
   try {
-    const { data: rewards, error } = await supabase
+    if (!supabase) {
+      return res.json([]);
+    }
+
+    const userId = req.authUserId;
+
+    const { data: rewardsRaw, error: rewardsError } = await supabase
       .from("rewards")
       .select("*");
 
-    if (error) throw error;
+    if (rewardsError) throw rewardsError;
 
-    const { data: stats } = await supabase
+    const rewards = Array.isArray(rewardsRaw) ? rewardsRaw : [];
+
+    const { data: statsRaw, error: statsError } = await supabase
       .from("journal_analysis")
-      .select("*");
+      .select("*")
+      .eq("user_id", userId);
 
-    const rows = Array.isArray(stats) ? stats : [];
+    if (statsError) throw statsError;
+
+    const rows = Array.isArray(statsRaw) ? statsRaw : [];
 
     const totalJournals = rows.length;
 
@@ -651,7 +713,7 @@ app.get("/rewards", async (req, res) => {
     res.json(unlockedRewards);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch rewards" });
+    res.status(500).json([]);
   }
 });
 

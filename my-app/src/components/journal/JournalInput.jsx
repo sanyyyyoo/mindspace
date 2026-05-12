@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabase.js";
+import { mindspacePost } from "../../lib/mindspaceApi.js";
 
 function JournalInput() {
   const [journal, setJournal] = useState("");
@@ -11,25 +13,31 @@ function JournalInput() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ journal }),
-      });
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
 
-      const rawText = await response.text();
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error(
-          `Expected JSON from /analyze but got ${contentType || "unknown content type"}. Ensure backend is running on port 3000.`
-        );
+      if (userErr || !user?.id) {
+        window.location.assign("/login");
+        return;
       }
 
-      const data = JSON.parse(rawText);
-      setResult(data);
+      const { data } = await mindspacePost("/analyze", {
+        journal,
+        user_id: user.id,
+      });
+
+      setResult({
+        ...data,
+        categories: Array.isArray(data?.categories) ? data.categories : [],
+      });
     } catch (error) {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        window.location.assign("/login");
+        return;
+      }
       console.error("Error analyzing journal:", error);
     } finally {
       setLoading(false);
@@ -120,7 +128,7 @@ function JournalInput() {
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-              {result.categories.map((cat, idx) => (
+              {(Array.isArray(result.categories) ? result.categories : []).map((cat, idx) => (
                 <span
                   key={idx}
                   style={{

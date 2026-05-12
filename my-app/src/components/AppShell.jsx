@@ -1,11 +1,35 @@
-import { Link, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useTheme } from "../hooks/useTheme";
+import { useAuth } from "../context/AuthContext.jsx";
+import BottomNav from "./BottomNav.jsx";
 
 export default function AppShell() {
   const { theme, toggleTheme } = useTheme();
+  const { user, signOut, mapAuthError } = useAuth();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+
+  /** Clear Supabase session then return user to public login page */
+  async function handleLogout() {
+    setSigningOut(true);
+    try {
+      const { error } = await signOut();
+      if (error) console.error(mapAuthError(error));
+      navigate("/login", { replace: true });
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  const display =
+    user?.user_metadata?.username ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "";
 
   return (
-    <div className="selfcast-root" style={{ minHeight: "100vh" }}>
+    <div className="selfcast-root pb-16 md:pb-0" style={{ minHeight: "100vh" }}>
       <div className="selfcast-ambient" aria-hidden />
       {theme === "dark" ? (
         <svg
@@ -109,6 +133,31 @@ export default function AppShell() {
           >
             Analysis
           </Link>
+          {display ? (
+            <span
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: "0.78rem",
+                color: "var(--text-muted)",
+                maxWidth: 140,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={user?.email ?? ""}
+            >
+              {display}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="selfcast-pill"
+            onClick={handleLogout}
+            disabled={signingOut}
+            style={{ fontSize: "0.8rem", opacity: signingOut ? 0.65 : 1 }}
+          >
+            {signingOut ? "Signing out…" : "Log out"}
+          </button>
           <button
             type="button"
             className="selfcast-pill"
@@ -121,6 +170,7 @@ export default function AppShell() {
           </button>
         </nav>
         <Outlet />
+        <BottomNav />
       </div>
     </div>
   );

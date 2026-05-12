@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 
 import { useTheme } from "../hooks/useTheme";
 import CategoryMixChart from "../components/dashboard/CategoryMixChart";
@@ -10,6 +9,7 @@ import SelfcastStatCards from "../components/selfcast/SelfcastStatCards";
 import JournalStreakGrid from "../components/selfcast/JournalStreakGrid";
 import SelfcastWeekComparison from "../components/selfcast/SelfcastWeekComparison";
 import SelfcastSignalList from "../components/selfcast/SelfcastSignalList";
+import { mindspaceGet } from "../lib/mindspaceApi.js";
 import {
   buildSignals,
   buildWeekComparison,
@@ -35,6 +35,42 @@ function readChartColors(theme) {
   };
 }
 
+/** Fallback when dashboard-stats fails (keeps charts / layout from crashing). */
+const EMPTY_STATS = {
+  totalJournals: 0,
+  averageScore: 0,
+  weeklyAverage: 0,
+  weeklyEntriesCount: 0,
+  headlineProductivityAvg10: 0,
+  headlineBasis: "latest_row",
+  headlineExplanation: "",
+  lastJournalDayKey: null,
+  avgScoreOnLastJournalDay: null,
+  sevenDayBlendedAvg10: null,
+  latestEntryScore10: null,
+  latestJournalCreatedAt: null,
+  sleepHoursHint: null,
+  distinctJournalDates: 0,
+  streak: 0,
+  longestStreak: 0,
+  productiveDays: 0,
+  consistencyPercentage: 0,
+  topCategory: "None",
+  productivityTrend: [],
+  categoryData: [],
+  journaledDates: [],
+  journalDaysThisMonth: 0,
+};
+
+function redirectIfUnauthorized(error) {
+  const status = error?.response?.status;
+  if (status === 401) {
+    window.location.assign("/login");
+    return true;
+  }
+  return false;
+}
+
 export default function Dashboard() {
   const { theme } = useTheme();
   const [stats, setStats] = useState(null);
@@ -55,10 +91,12 @@ export default function Dashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const { data } = await axios.get("http://localhost:3000/dashboard-stats");
-      setStats(data);
+      const { data } = await mindspaceGet("/dashboard-stats");
+      setStats(data && typeof data === "object" ? data : EMPTY_STATS);
     } catch (e) {
+      if (redirectIfUnauthorized(e)) return;
       console.error("Dashboard fetch error:", e);
+      setStats(EMPTY_STATS);
     } finally {
       setLoading(false);
     }
@@ -66,19 +104,31 @@ export default function Dashboard() {
 
   const fetchReflection = async () => {
     try {
-      const { data } = await axios.get("http://localhost:3000/weekly-reflection");
-      setReflection(data);
+      const { data } = await mindspaceGet("/weekly-reflection");
+      const safe =
+        data && typeof data === "object"
+          ? {
+              reflection: data.reflection ?? "",
+              strength: data.strength ?? "",
+              improvement: data.improvement ?? "",
+            }
+          : { reflection: "", strength: "", improvement: "" };
+      setReflection(safe);
     } catch (e) {
+      if (redirectIfUnauthorized(e)) return;
       console.error("Reflection fetch error:", e);
+      setReflection({ reflection: "", strength: "", improvement: "" });
     }
   };
 
   const fetchRewards = async () => {
     try {
-      const { data } = await axios.get("http://localhost:3000/rewards");
-      setRewards(data);
+      const { data } = await mindspaceGet("/rewards");
+      setRewards(Array.isArray(data) ? data : []);
     } catch (e) {
+      if (redirectIfUnauthorized(e)) return;
       console.log("Rewards fetch error:", e);
+      setRewards([]);
     }
   };
 
